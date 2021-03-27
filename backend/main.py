@@ -4,6 +4,7 @@ import pymongo
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
+import json
 
 load_dotenv()
 app = Flask(__name__)
@@ -31,7 +32,7 @@ materialsPostParser.add_argument("materialName", type=str, help="Name of the mat
 
 
 shelterPutParser = reqparse.RequestParser()
-materialsPostParser.add_argument("room", type=str, help="Name of the material")
+shelterPutParser.add_argument("room", type=str, help="Name of the material")
 
 
 # Classes
@@ -142,14 +143,16 @@ class Materials(Resource):
         return {"mesage":"Successful","status": "200 OK"}
 
 class Shelters(Resource):
-    def get(self,shelterid,operation):
-        dataFromDB = collection.find_one({"_id":userid})
-        return {"message":"Yeah","status":"200 OK", "data":dataFromDB}
+    def get(self,shelterid):
+        query = collection.find_one({"_id":userid})
+        return {"message":"Yeah","status":"200 OK", "data":query}
     def post(self,userid): 
         return "nice"
     def put(self,userid):
-
-        return "yeah okay"
+        args = shelterPutParser.parse_args()
+        room_data = json.loads(args["room"])
+        shelters.update_one({"_id":userid},{"$push":room_data})
+        return {"message":"Yeah ok","status":"200 OK"}
 
 # Resources Endpoints
 api.add_resource(Materials,"/api/Materials/<int:userid>")
