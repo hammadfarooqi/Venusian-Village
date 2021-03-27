@@ -29,6 +29,11 @@ materialsPutParser.add_argument("amount", type=int, help="Amount of the material
 materialsPostParser = reqparse.RequestParser()
 materialsPostParser.add_argument("materialName", type=str, help="Name of the material")
 
+
+shelterPutParser = reqparse.RequestParser()
+materialsPostParser.add_argument("room", type=str, help="Name of the material")
+
+
 # Classes
 # collection.insert_one(testObject)
 
@@ -143,6 +148,7 @@ class Shelters(Resource):
     def post(self,userid): 
         return "nice"
     def put(self,userid):
+
         return "yeah okay"
 
 # Resources Endpoints

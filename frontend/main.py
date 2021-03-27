@@ -13,7 +13,8 @@ def main():
 
 shelterName = ""
 if __name__ == '__main__':
-    shelterName = input("What is the name of your shelter? ")  
+    shelter_name = input("What is the name of your shelter? ")
+    requests.get("http://127.0.0.1:5000/api/Login/{name}".format(name=shelter_name))
     if(shelterName != ""):
         WIN = pygame.display.set_mode((WIDTH,HEIGHT))
         main()
