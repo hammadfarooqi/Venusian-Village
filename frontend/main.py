@@ -1,8 +1,7 @@
 import pygame
 import requests
-
+import time
 WIDTH,HEIGHT = 1600,900
-WIN = pygame.display.set_mode((WIDTH,HEIGHT))
 
 def main():
     run = True
@@ -15,5 +14,6 @@ def main():
 shelterName = ""
 if __name__ == '__main__':
     shelterName = input("What is the name of your shelter? ")  
-    if(shelterName != "")
+    if(shelterName != ""):
+        WIN = pygame.display.set_mode((WIDTH,HEIGHT))
         main()
