@@ -4,6 +4,7 @@ import time
 import json
 from threading import Timer
 from random import randint
+import sys
 
 WIDTH,HEIGHT = 1152,640
 root = "http://127.0.0.1:5000/api/"
@@ -82,6 +83,7 @@ def load_images():
     images["bg"] = pygame.image.load('images/bg.png').convert()
     images["menu_bg"] = pygame.image.load('images/menu_bg.png').convert()
     images["ui"] = pygame.image.load('images/ui.png')
+    images["star"] = pygame.image.load('images/star.png')
     
     images["Greenhouse"] = pygame.image.load('images/rooms/Standard_Plant.png')
     images["CloudTreatment"] = pygame.image.load('images/rooms/Sulfuric_Filter.png')
@@ -104,7 +106,7 @@ def load_buttons():
     # buttons["options"] = button(10, 20+buttons["play"].height, 6, "options")
     return buttons
 
-def refresh(win, images, buttons, page, rooms =[], x = 0, image_offset = 0, room_cards = [], resources = {}):
+def refresh(win, images, buttons, page, rooms =[], x = 0, image_offset = 0, room_cards = [], resources = {}, room_buttons = []):
     if page == "game":
         win.blit(pygame.transform.smoothscale(images["bg"], (WIDTH, HEIGHT)), (0, 0))
     else:
@@ -114,18 +116,26 @@ def refresh(win, images, buttons, page, rooms =[], x = 0, image_offset = 0, room
     for button in buttons.values():
         button.draw(win, x)
     
+    
     for room_card in room_cards:
         room_card.draw(win)
 
     for i in range(0, len(rooms)):
         currentRoom = images[rooms[i]['name']]
         win.blit(pygame.transform.scale(currentRoom, (currentRoom.get_width()*2, currentRoom.get_height()*2)), (x, HEIGHT // 2 - currentRoom.get_height()))
-        
+        if rooms[i]["collectable"]:
+            win.blit(pygame.transform.scale(images['star'], (50, 50)), (x+currentRoom.get_width()-25, HEIGHT // 2 - 30))
+            # pygame.draw.rect(win, (0, 0, 255), pygame.Rect(x, HEIGHT // 2 - currentRoom.get_height(), 10, 10))
         win.blit(pygame.transform.scale(images['blimp'], (images['blimp'].get_width()*2, images['blimp'].get_height()*2)), (x+currentRoom.get_width() - images['blimp'].get_width(), HEIGHT // 2 - currentRoom.get_height()-images['blimp'].get_width()*2+50))
         x += currentRoom.get_width()*2 - image_offset
         if i + 1 < len(rooms):
             win.blit(pygame.transform.scale(images["Tunnel"], (images["Tunnel"].get_width()*2, images["Tunnel"].get_height()*2)), (x, HEIGHT // 2 - currentRoom.get_height()))
             x += images["Tunnel"].get_width()*2 - image_offset
+    
+    # print("len of room_buttons:"+str(len(room_buttons)))
+    # for room_button in room_buttons:
+    #     room_button.show = True
+    #     room_button.draw(win, x-74)
     if page == "game":
         win.blit(pygame.transform.smoothscale(images["ui"], (WIDTH, HEIGHT)), (0, 0))
         font.render(win, str(resources["vbucks"]), (1050, 125), (255, 255, 255), scale=2, spacing=2)
@@ -152,6 +162,8 @@ def menu(page):
             if event.type == pygame.QUIT:
                 run=False
                 run_everything = False
+                # sys.exit()
+                # quit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if buttons["play"].isOver(pos) and buttons["play"].show:
                     run = False
@@ -172,8 +184,14 @@ def useMaterials(one,two):
     requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"water", "amount":population // population_per_resource * -1})
     requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"food", "amount":population // population_per_resource * -1})
     requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"oxygen", "amount":population // population_per_resource * -1})
+    resources = requests.get(root + "Materials/"+str(id)).json()['data']['materials']
 
-    
+    if(resources["water"] < 0 and randint(0,100) < 50):
+        requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"population", "amount":(population // population_per_resource * -1)+1})
+    if(resources["food"] < 0 and randint(0,100) < 50):
+        requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"population", "amount":(population // population_per_resource * -1)+1})
+    if(resources["oxygen"] < 0 and randint(0,100) < 50):
+        requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"population", "amount":(population // population_per_resource * -1)+1})
 
     timer = Timer(drain_timer, useMaterials, (1,2))
     timer.start()
@@ -205,7 +223,8 @@ def main(page):
     timer.start()
     pos=(0,0)
     while run:
-        refresh(win, images, buttons, page, rooms, x, image_offset, room_cards, resources)
+        rooms = requests.get(root + "Shelters/"+str(id)).json()['data']['rooms']
+        refresh(win, images, buttons, page, rooms, x, image_offset, room_cards, resources, room_buttons)
         #print(resources)
         resources = requests.get(root + "Materials/"+str(id)).json()['data']['materials']
         for event in pygame.event.get():
@@ -216,14 +235,16 @@ def main(page):
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_down = True
                 room_index = -1
-                print("yes")
+                print((pos[0]-x, pos[1]))
                 for i in range(0, len(room_buttons)):
+                    print(room_buttons[i].x, room_buttons[i].y, end = ':;: ')
                     if room_buttons[i].isOver((pos[0]-x, pos[1])):
                         rooms = requests.get(root + "Shelters/"+str(id)).json()['data']['rooms']
-                        room_index = i+1
-                        # temp fix
-                        if room_index == 1:
-                            room_index = 2
+                        room_index = i
+                        print(room_index, end = " ---")
+                        # # temp fix
+                        # if room_index == 1:
+                        #     room_index = 2
 
                         roomClicked = rooms[room_index]
                         if (roomClicked["collectable"]):
@@ -243,6 +264,7 @@ def main(page):
                                     resources = requests.get(root + "Materials/"+str(id)).json()['data']['materials']
                                     print("made request to add {resource}".format(resource=resource))
                             r = Timer(roomClicked["speed"], habitatClicked, (id,roomClicked["name"]))
+                            rooms = requests.get(root + "Shelters/"+str(id)).json()['data']['rooms']
                             r.start()
                         else:
                             print("The Room is not ready!")
@@ -270,7 +292,8 @@ def main(page):
                         population_increase_chance = 80
                         if(randint(0,100) < population_increase_chance):
                             requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"population", "amount":randint(1,3)})
-                        room_buttons.append(button((images[rooms[i]['name']].get_width()*2 - image_offset+images["Tunnel"].get_width()*2 - image_offset)*len(rooms), HEIGHT // 2 - images[rooms[0]['name']].get_height(), 2, "clear"))
+                        rooms_len = len(room_buttons)
+                        room_buttons.append(button((378)*rooms_len, HEIGHT // 2 - images[rooms[0]['name']].get_height(), 2, "clear"))
             if event.type == pygame.MOUSEBUTTONUP:
                 mouse_down = False
         if add:
