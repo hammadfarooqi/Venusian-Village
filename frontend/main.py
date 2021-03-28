@@ -89,6 +89,7 @@ def main(page):
 
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     shelter_name = ""
     while shelter_name == "":
         shelter_name = input("What is the name of your shelter? ")  
@@ -96,11 +97,19 @@ if __name__ == '__main__':
     id = id_json["data"]["_id"]
     print(id)
 
+=======
+    # shelter_name = ""
+    # while shelter_name == "":
+    #    shelter_name = input("What is the name of your shelter? ") 
+    #    requests.get("http://127.0.0.1:5000/api/Login/{name}".format(name=shelter_name))
+    
+>>>>>>> 5d7d7f32addea11452f47b58fc3da0fc02057cd2
     pygame.init()
     win = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("VENUS GAME")
     clock = pygame.time.Clock()
     images = load_images()
+<<<<<<< HEAD
     buttons = load_buttons()
     
     run_everything = True
@@ -112,3 +121,6 @@ if __name__ == '__main__':
             run_everything, page = option(page)
         elif page == "game":
             run_everything, page = main(page)
+=======
+    main()
+>>>>>>> 5d7d7f32addea11452f47b58fc3da0fc02057cd2

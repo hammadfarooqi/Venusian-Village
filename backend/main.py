@@ -29,6 +29,11 @@ materialsPutParser.add_argument("amount", type=int, help="Amount of the material
 materialsPostParser = reqparse.RequestParser()
 materialsPostParser.add_argument("materialName", type=str, help="Name of the material")
 
+
+shelterPutParser = reqparse.RequestParser()
+materialsPostParser.add_argument("room", type=str, help="Name of the material")
+
+
 # Classes
 # collection.insert_one(testObject)
 
@@ -51,30 +56,17 @@ materialsPostParser.add_argument("materialName", type=str, help="Name of the mat
 
 userMaterialBase = {
     "_id":0,
-    "materials": { "water": 0, "food":0, "oxygen": 0, "happiness": 0, "population": 0}
-}
-shelterBase = { 
-    "_id":0,
-    "name":"",
-    "rooms":[],
+    "materials": { "water": 0, "food":0, "oxygen": 0, "happiness": 0, "population": 0, "vbucks":0}
 }
 
-roomBase = {
-    "_id":0, # id of room 
-    "name":"", # name of room 
-    "collectable":False, # if the user can click on the room to harvest it
-    "resources":[""], # the resouces that are linked with the room 
-    "speed":"", # the amount of seconds needed to switch collectable from false to true
-    "errorChance":0 # decimal for the chance of something going wrong. 
-}
 class Room:
     def __init__(_id,name,resources,speed,errorChance):
-        self._id = _id
-        self.name = name
-        self.resouces = resources
-        self.speed = speed
-        self.errorChange = errorChance
-        self.collectable = False
+        self._id = _id # id of room 
+        self.name = name # name of room 
+        self.resouces = resources # the resouces that are linked with the room 
+        self.speed = speed # the amount of seconds needed to switch collectable from false to true
+        self.errorChange = errorChance # decimal for the chance of something going wrong. 
+        self.collectable = False # if the user can click on the room to harvest it
     def asDict(self):
         return {
             "_id": self.id,
@@ -84,7 +76,7 @@ class Room:
             "errorChange": self.errorChange,
             "collectable": self.collectable
         }
-class Shelter:
+class Shelter:  
     def __init__(self,_id, name ,rooms ):
         self.id = _id # wow
         self.name = name
@@ -115,7 +107,7 @@ class Login(Resource):
             return {"message": "Youre Cracked", "status": "200 OK", "data":{"_id":newShelter.id}}
         else:
             # return with the id 
-            return query["id"]
+            return {"message": "Youre Cracked", "staus": "200 OK", "data":{"_id":query["id"]}}
     def post(self,name):
         return
     def put(self,name):
@@ -156,6 +148,7 @@ class Shelters(Resource):
     def post(self,userid): 
         return "nice"
     def put(self,userid):
+
         return "yeah okay"
 
 # Resources Endpoints
