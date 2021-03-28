@@ -1,5 +1,5 @@
 from flask import Flask
-from flask_restful import Api, Resource, reqparse 
+from flask_restful import Api, Resource, reqparse, inputs
 import pymongo
 from pymongo import MongoClient
 from dotenv import load_dotenv
@@ -36,7 +36,7 @@ shelterPutParser = reqparse.RequestParser()
 shelterPutParser.add_argument("room", type=str, help="Name of the material")
 
 shelterRoomsPutParser = reqparse.RequestParser()
-shelterRoomsPutParser.add_argument("value", type=bool, help="Name of the material")
+shelterRoomsPutParser.add_argument("value", type=inputs.boolean, help="Name of the material")
 
 # Classes
 # collection.insert_one(testObject)
@@ -155,7 +155,8 @@ class Materials(Resource):
     def put(self,userid):
         # parse parameters, increment the document with associated ID and then return succesful
         args = materialsPutParser.parse_args()
-        resources.update_one({"_id":userid},{"$inc":{"materials.water":args["amount"]}})  
+        queryMaterial = args["materialName"]
+        resources.update_one({"_id":userid},{"$inc":{"materials.{material}".format(material=queryMaterial):args["amount"]}})  
         return {"mesage":"Successful","status": "200 OK"}
 
 class Shop(Resource):
@@ -185,6 +186,7 @@ class ShelterRooms(Resource):
         return {"message" : "POGGERS", "status": "200 OK", "data":queried_room}
     def put(self,shelterid,name):
         args = shelterRoomsPutParser.parse_args()
+        print(args)
         query = shelters.find_one({"_id":shelterid})
         rooms = query["rooms"]
         indexOfRoom = 0
@@ -192,8 +194,11 @@ class ShelterRooms(Resource):
             if(room["name"] == name):
                 break
             indexOfRoom += 1
+        print(args["value"])
+        print("rooms."+str(indexOfRoom)+".collectable")
         query = shelters.update_one({"_id":shelterid},{"$set":{"rooms."+str(indexOfRoom)+".collectable":args["value"]}})
         queried_room = list(filter(lambda room: room["name"] == name, rooms))[0]
+        print(queried_room)
         return {"message": "ok","status": "200 OK"}
         
 
