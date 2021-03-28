@@ -24,6 +24,40 @@ class button():
         if self.show:
             win.blit(pygame.transform.scale(self.image, (self.width, self.height)), (self.x, self.y))
 
+def clip(surf,x,y,x_size,y_size):
+    handle_surf = surf.copy()
+    clipR = pygame.Rect(x,y,x_size,y_size)
+    handle_surf.set_clip(clipR)
+    image = surf.subsurface(handle_surf.get_clip())
+    return image.copy()
+
+class Font():
+    def __init__(self, path):
+        self.spacing = 1
+        self.character_order = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','.','-',',',':','+','\'','!','?','0','1','2','3','4','5','6','7','8','9','(',')','/','_','=','\\','[',']','*','"','<','>',';']
+        font_img = pygame.image.load(path).convert()
+        current_char_width = 0
+        self.characters = {}
+        character_count = 0
+        for x in range(font_img.get_width()):
+            c = font_img.get_at((x, 0))
+            if c[0] == 127:
+                char_img = clip(font_img, x - current_char_width, 0, current_char_width, font_img.get_height())
+                self.characters[self.character_order[character_count]] = char_img.copy()
+                character_count += 1
+                current_char_width = 0
+            else:
+                current_char_width += 1
+        self.space_width = self.characters['A'].get_width()
+
+    def render(self, surf, text, loc):
+        x_offset = 0
+        for char in text:
+            if char != ' ':
+                surf.blit(self.characters[char], (loc[0] + x_offset, loc[1]))
+                x_offset += self.characters[char].get_width() + self.spacing
+            else:
+                x_offset += self.space_width + self.spacing
 
 def load_images():
     images = {}
@@ -35,7 +69,6 @@ def load_buttons():
     buttons["play"] = button(10, 10, 6, "play")
     buttons["options"] = button(10, 20+buttons["play"].height, 6, "options")
     return buttons
-
 
 def refresh(win, images, buttons, page):
     if page == "game":
@@ -73,6 +106,10 @@ def menu(page):
 def main(page):
     run_everything = True
     run = True
+    # water = requests.get("http://127.0.0.1:5000/api/Materials/0",params={"materialName":"water"}).json()
+    resources = requests.get("http://127.0.0.1:5000/api/Materials/0").json()
+    print(type(resources))
+    print(resources)
     while run:
         clock.tick(30)
         refresh(win, images, buttons, page)
@@ -86,31 +123,22 @@ def main(page):
                 pass
     return run_everything, page
 
-
-
 if __name__ == '__main__':
-<<<<<<< HEAD
     shelter_name = ""
     while shelter_name == "":
         shelter_name = input("What is the name of your shelter? ")  
     id_json = requests.get("http://127.0.0.1:5000/api/Login/{name}".format(name=shelter_name)).json()
+    # print(id_json)
     id = id_json["data"]["_id"]
-    print(id)
+    # print(id)
 
-=======
-    # shelter_name = ""
-    # while shelter_name == "":
-    #    shelter_name = input("What is the name of your shelter? ") 
-    #    requests.get("http://127.0.0.1:5000/api/Login/{name}".format(name=shelter_name))
-    
->>>>>>> 5d7d7f32addea11452f47b58fc3da0fc02057cd2
     pygame.init()
     win = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("VENUS GAME")
+    pygame.display.set_caption("Venusian Village")
     clock = pygame.time.Clock()
     images = load_images()
-<<<<<<< HEAD
     buttons = load_buttons()
+    font = Font("images/large_font.png")
     
     run_everything = True
     page = "menu"
@@ -121,6 +149,3 @@ if __name__ == '__main__':
             run_everything, page = option(page)
         elif page == "game":
             run_everything, page = main(page)
-=======
-    main()
->>>>>>> 5d7d7f32addea11452f47b58fc3da0fc02057cd2
