@@ -2,6 +2,7 @@ import pygame
 import requests
 import time
 import json
+from threading import Timer
 
 WIDTH,HEIGHT = 1152,640
 
@@ -142,7 +143,9 @@ def menu(page):
     buttons["play"].show = False
     # buttons["options"].show = False
     return run_everything, page
-
+def habitatClicked(id,name):
+    #requests.put("http://127.0.0.1:5000/api/ShelterRooms/{id}/{roomName}".format(id=id,roomName=name),params={"value":True})
+    print("wow gg")
 def main(page):
     buttons["add_before"].show = True
     buttons["add_after"].show = True
@@ -152,10 +155,7 @@ def main(page):
     # print(requests.get("http://127.0.0.1:5000/api/Materials/0"))
     print(id)
     resources = requests.get("http://127.0.0.1:5000/api/Materials/"+str(id)).json()['data']['materials']
-    room = requests.get("http://127.0.0.1:5000/api/Rooms/Habitat").json()["data"]
-    requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
-    
-    room = requests.get("http://127.0.0.1:5000/api/Rooms/Habitat").json()["data"]
+    room = requests.get("http://127.0.0.1:5000/api/Rooms/Greenhouse").json()["data"]
     requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
     
     rooms = requests.get("http://127.0.0.1:5000/api/Shelters/"+str(id)).json()['data']['rooms']
@@ -164,7 +164,7 @@ def main(page):
     x = x_standard
     image_offset = 16
     mouse_down = False
-    room_buttons = [button(0, HEIGHT // 2 - images[rooms[i]['name']].get_height(), 2, "clear")]
+    room_buttons = [button(0, HEIGHT // 2 - images[rooms[0]['name']].get_height(), 2, "clear")]
     while run:
         refresh(win, images, buttons, page, rooms, x, image_offset)
         for event in pygame.event.get():
@@ -179,6 +179,20 @@ def main(page):
                 for i in range(0, len(room_buttons)):
                     if room_buttons[i].isOver(pos):
                         room_index = i
+                        roomClicked = rooms[room_index]
+                        
+                        print("poop " + str(i))
+                        if (roomClicked["collectable"]):
+                            test = False
+                            print(requests.put("http://127.0.0.1:5000/api/ShelterRooms/{id}/{roomName}".format(id=id,roomName=roomClicked["name"]),params={"value":False}))
+                            print("http://127.0.0.1:5000/api/ShelterRooms/{id}/{roomName}".format(id=id,roomName=roomClicked["name"]))
+                            for resource in roomClicked["resources"]:
+                                requests.put("http://127.0.0.1:5000/api/Materials/{id}".format(id=id),params={"materialName":resource, "amount":20})
+                                print("made request to add {resource}".format(resource=resource))
+                            r = Timer(roomClicked["speed"], habitatClicked, (id,roomClicked["name"]))
+                            r.start
+                        else:
+                            print("The Room is not ready!")
                 if buttons["add_before"].isOver(pos):
                     pass
                 if buttons["add_after"].isOver(pos):
