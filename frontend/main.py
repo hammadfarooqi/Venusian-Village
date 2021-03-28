@@ -146,9 +146,12 @@ def menu(page):
     buttons["play"].show = False
     # buttons["options"].show = False
     return run_everything, page
+rooms = {}
 def habitatClicked(id,name):
-    #requests.put("http://127.0.0.1:5000/api/ShelterRooms/{id}/{roomName}".format(id=id,roomName=name),params={"value":True})
+    requests.put("http://127.0.0.1:5000/api/ShelterRooms/{id}/{roomName}".format(id=id,roomName=name),params={"value":True})
     print("wow gg")
+    rooms = requests.get("http://127.0.0.1:5000/api/Shelters/"+str(id)).json()['data']['rooms']
+    print("after request")
 def main(page):
     buttons["add_before"].show = True
     buttons["add_after"].show = True
@@ -187,6 +190,7 @@ def main(page):
                 print("yes")
                 for i in range(0, len(room_buttons)):
                     if room_buttons[i].isOver((pos[0]-(x), pos[1])):
+                        rooms = requests.get("http://127.0.0.1:5000/api/Shelters/"+str(id)).json()['data']['rooms']
                         room_index = i
                         roomClicked = rooms[room_index]
                         print("poop " + str(i))
@@ -196,10 +200,10 @@ def main(page):
                             rooms = requests.get("http://127.0.0.1:5000/api/Shelters/"+str(id)).json()['data']['rooms']
                             print("http://127.0.0.1:5000/api/ShelterRooms/{id}/{roomName}".format(id=id,roomName=roomClicked["name"]))
                             for resource in roomClicked["resources"]:
-                                requests.put("http://127.0.0.1:5000/api/Materials/{id}".format(id=id),params={"materialName":resource, "amount":20})
+                                requests.put("http://127.0.0.1:5000/api/Materials/{id}".format(id=id),params={"materialName":resource, "amount":3})
                                 print("made request to add {resource}".format(resource=resource))
                             r = Timer(roomClicked["speed"], habitatClicked, (id,roomClicked["name"]))
-                            r.start
+                            r.start()
                         else:
                             print("The Room is not ready!")
                         print(room_index)
