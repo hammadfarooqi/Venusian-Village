@@ -140,6 +140,7 @@ class Materials(Resource):
         queryMaterial = args["materialName"]
         if queryMaterial is None:
             return {"message":"Yeah","status":"200 OK", "data":data}
+        print("resources queried")
         return {"message":"Yeah","status":"200 OK", "data":data["materials"][queryMaterial]}
     def post(self,userid):
         # Creating an id from the database 
@@ -167,6 +168,7 @@ class Shop(Resource):
 class Shelters(Resource):
     def get(self,shelterid):
         query = shelters.find_one({"_id":shelterid})
+        print("resources queried")
         return {"message":"Yeah","status":"200 OK", "data":query}
     def post(self,shelterid): 
         return "nice"
