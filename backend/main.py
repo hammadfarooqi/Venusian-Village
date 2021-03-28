@@ -108,7 +108,7 @@ class Login(Resource):
             return {"message": "Youre Cracked", "status": "200 OK", "data":{"_id":newShelter.id}}
         else:
             # return with the id 
-            return {"message": "Youre Cracked", "staus": "200 OK", "data":{"_id":query["id"]}}
+            return {"message": "Youre Cracked", "staus": "200 OK", "data":{"_id":query["_id"]}}
     def post(self,name):
         return
     def put(self,name):
@@ -142,6 +142,8 @@ class Materials(Resource):
         resources.update_one({"_id":userid},{"$inc":{"materials.water":args["amount"]}})  
         return {"mesage":"Successful","status": "200 OK"}
 
+
+
 class Shelters(Resource):
     def get(self,shelterid):
         query = collection.find_one({"_id":userid})
@@ -162,7 +164,7 @@ api.add_resource(Shelters,"/api/Shelters/<int:userid>")
 # Shelter end points 
 #api.add_resource(Shelters,"/api/Shelters/<int:shelterid>/<string:operation>")
 api.add_resource(Login,"/api/Login/<string:name>")
-#api.add_resource(Shelters,"/api/Shelters/")
+#api.add_resource(Shelters,"/api/Shelters/")    
 
 
 if __name__ == "__main__":

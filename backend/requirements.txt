@@ -2,3 +2,4 @@ Flask==1.1.2
 Flask-RESTful==0.3.8
 dnspython==2.1.0
 pymongo==3.7.2
+pyhton-dotenv==0.16.0
