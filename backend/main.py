@@ -152,19 +152,19 @@ class Materials(Resource):
 
 class Shelters(Resource):
     def get(self,shelterid):
-        query = collection.find_one({"_id":userid})
+        query = shelters.find_one({"_id":shelterid})
         return {"message":"Yeah","status":"200 OK", "data":query}
-    def post(self,userid): 
+    def post(self,shelterid): 
         return "nice"
-    def put(self,userid):
+    def put(self,shelterid):
         args = shelterPutParser.parse_args()
         room_data = json.loads(args["room"])
-        shelters.update_one({"_id":userid},{"$push":room_data})
+        shelters.update_one({"_id":shelterid},{"$push":room_data})
         return {"message":"Yeah ok","status":"200 OK"}
 
 # Resources Endpoints
 api.add_resource(Materials,"/api/Materials/<int:userid>")
-api.add_resource(Shelters,"/api/Shelters/<int:userid>")
+api.add_resource(Shelters,"/api/Shelters/<int:shelterid>")
 api.add_resource(Rooms,"/api/Rooms/<string:name>")
 api.add_resource(Login,"/api/Login/<string:name>")
 #api.add_resource(Shelters,"/api/Shelters/")    
