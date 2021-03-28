@@ -106,6 +106,13 @@ class Login(Resource):
             newShelter = Shelter(documentsNum,name,[])
             print(newShelter.asDict())
             shelters.insert_one(newShelter.asDict())
+
+            documentsNum = resources.find().count()
+            userMaterials = userMaterialBase
+            userMaterials["_id"] = documentsNum
+            resources.insert_one(
+            userMaterials
+        )
             return {"message": "Youre Cracked", "status": "200 OK", "data":{"_id":newShelter.id}}
         else:
             # return with the id 
@@ -158,15 +165,25 @@ class Shelters(Resource):
         return "nice"
     def put(self,shelterid):
         args = shelterPutParser.parse_args()
-        room_data = json.loads(args["room"])
-        shelters.update_one({"_id":shelterid},{"$push":room_data})
+        # room_data = json.loads(args["room"])
+        shelters.update_one({"_id":shelterid},{"$push":args["room"]})
         return {"message":"Yeah ok","status":"200 OK"}
-
+class Clear(Resource):
+    def get(self):
+        return {}
+    def put(self):
+        return {}
+    def post(self):
+        print(shelters)
+        shelters.delete_mamy({})
+        resources.delete_mamy({})
+        return {"message":"Yeah ok","status":"200 OK"}
 # Resources Endpoints
 api.add_resource(Materials,"/api/Materials/<int:userid>")
 api.add_resource(Shelters,"/api/Shelters/<int:shelterid>")
 api.add_resource(Rooms,"/api/Rooms/<string:name>")
 api.add_resource(Login,"/api/Login/<string:name>")
+api.add_resource(Clear,"/api/Clear")
 #api.add_resource(Shelters,"/api/Shelters/")    
 
 
