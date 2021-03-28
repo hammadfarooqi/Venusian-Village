@@ -9,7 +9,7 @@ class button():
     def __init__(self, x, y, scale, image):
         self.x = x
         self.y = y
-        self.image = pygame.image.load('images/buttons/'+image+'.png').convert()
+        self.image = pygame.image.load('images/buttons/'+image+'.png')
         self.width = int(self.image.get_width()*scale)
         self.height = int(self.image.get_height()*scale)
         self.show = False
@@ -19,9 +19,9 @@ class button():
             return True
         return False
     
-    def draw(self, win):
+    def draw(self, win, offset = 0):
         if self.show:
-            win.blit(pygame.transform.scale(self.image, (self.width, self.height)), (self.x, self.y))
+            win.blit(pygame.transform.scale(self.image, (self.width, self.height)), (self.x + offset, self.y))
 
 def clip(surf, x, y, width, height):
     handle_surf = surf.copy()
@@ -93,17 +93,20 @@ def load_images():
 def load_buttons():
     buttons = {}
     buttons["play"] = button(200, 400, 1.5, "Play")
+    buttons["add_before"] = button(-54, HEIGHT // 2 - 12, 3, "plus")
+    buttons["add_after"] = button(0, HEIGHT // 2 - 12, 3, "plus")
     # buttons["options"] = button(10, 20+buttons["play"].height, 6, "options")
     return buttons
 
-def refresh(win, images, buttons, page, rooms =[], x = 10, image_offset = 0):
+def refresh(win, images, buttons, page, rooms =[], x = 0, image_offset = 0):
     if page == "game":
         win.blit(pygame.transform.smoothscale(images["bg"], (WIDTH, HEIGHT)), (0, 0))
     else:
         win.blit(pygame.transform.smoothscale(images["menu_bg"], (WIDTH, HEIGHT)), (0, 0))
 
+    buttons["add_after"].x=(-94 - (len(rooms)*(224+154)-154 - WIDTH))*-1 + WIDTH - buttons["add_after"].width - 20
     for button in buttons.values():
-        button.draw(win)
+        button.draw(win, x)
 
     for i in range(0, len(rooms)):
         win.blit(pygame.transform.scale(images[rooms[i]['name']], (images[rooms[i]['name']].get_width()*2, images[rooms[i]['name']].get_height()*2)), (x, HEIGHT // 2 - images[rooms[i]['name']].get_height()))
@@ -128,7 +131,7 @@ def menu(page):
         refresh(win, images, buttons, page)
         for event in pygame.event.get():
             pos = pygame.mouse.get_pos()
-            print(pos)
+            # print(pos)
             if event.type == pygame.QUIT:
                 run=False
                 run_everything = False
@@ -141,6 +144,8 @@ def menu(page):
     return run_everything, page
 
 def main(page):
+    buttons["add_before"].show = True
+    buttons["add_after"].show = True
     run_everything = True
     run = True
     # water = requests.get("http://127.0.0.1:5000/api/Materials/0",params={"materialName":"water"}).json()
@@ -167,7 +172,8 @@ def main(page):
     rooms = requests.get("http://127.0.0.1:5000/api/Shelters/"+str(id)).json()['data']['rooms']
     print(rooms)
     
-    x = 10
+    x_standard = 74
+    x = x_standard
     image_offset = 16
     mouse_down = False
     while run:
@@ -182,21 +188,23 @@ def main(page):
                 mouse_down = True
             if event.type == pygame.MOUSEBUTTONUP:
                 mouse_down = False
-            print(pos)
+            # print(pos)
         if pos[0] < 50:
             x += 10
             if mouse_down:
                 x += 10
-            if x > 10:
-                x = 10
+            if x > x_standard:
+                x = x_standard
         elif pos[0] > WIDTH - 50:
             x -= 10
             if mouse_down:
                 x -= 10
-            if x < -20 - (len(rooms)*(224+154)-154 - WIDTH): #Width of images including offset 
-                x = -20 - (len(rooms)*(224+154)-154 - WIDTH)
+            if x < -x_standard-20 - (len(rooms)*(224+154)-154 - WIDTH): #Width of images including offset 
+                x = -x_standard-20 - (len(rooms)*(224+154)-154 - WIDTH)
 
         clock.tick(30)
+    buttons["add_before"].show = False
+    buttons["add_after"].show = False
     return run_everything, page
 
 if __name__ == '__main__':
