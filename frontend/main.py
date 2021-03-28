@@ -75,7 +75,27 @@ class font:
 def load_images():
     images = {}
     images["bg"] = pygame.image.load('images/bg.png').convert()
-    images["water"] = pygame.image.load('images/water_drop.png').convert()
+    images["menu_bg"] = pygame.image.load('images/menu_bg.png').convert()
+    images["ui"] = pygame.image.load('images/ui.png')
+    
+    images["Greenhouse"] = pygame.image.load('images/rooms/Standard_Plant.png')#.convert()
+    # images["Greenhouse"].set_colorkey((255,0,254))
+    images["CloudTreatment"] = pygame.image.load('images/rooms/Sulfuric_Filter.png')#.convert()
+    # images["CloudTreatment"].set_colorkey((255,0,254))
+    images["Hospital"] = pygame.image.load('images/rooms/Hospital.png')#.convert()
+    # images["Hospital"].set_colorkey((255,0,254))
+    images["Potato"] = pygame.image.load('images/rooms/Spud.png')#.convert()
+    # images["Potato"].set_colorkey((255,0,254))
+    images["Tree"] = pygame.image.load('images/rooms/Tree.png')#.convert()
+    # images["Tree"].set_colorkey((255,0,254))
+    images["RoverDispatch"] = pygame.image.load('images/rooms/Rover.png')
+    # images["RoverDispatch"].set_colorkey((255,0,254))
+    images["Habitat"] = pygame.image.load('images/rooms/Habitat.png')#.convert()
+    # images["Habitat"].set_colorkey((255,0,254))
+    images["Tunnel"] = pygame.image.load('images/rooms/Tunnel.png')#.convert()
+    # images["Tunnel"].set_colorkey((255,0,254))
+
+
     return images
 
 def load_buttons():
@@ -84,15 +104,24 @@ def load_buttons():
     buttons["options"] = button(10, 20+buttons["play"].height, 6, "options")
     return buttons
 
-def refresh(win, images, buttons, page):
+def refresh(win, images, buttons, page, rooms =[]):
     if page == "game":
         win.blit(pygame.transform.smoothscale(images["bg"], (WIDTH, HEIGHT)), (0, 0))
     else:
-        win.fill((100, 100, 50))
+        win.blit(pygame.transform.smoothscale(images["menu_bg"], (WIDTH, HEIGHT)), (0, 0))
 
-    font.render(win, "hello there", (200, 200), (255, 255, 255), 5, 5)
     for button in buttons.values():
         button.draw(win)
+
+    x = 10
+    for i in range(0, len(rooms)):
+        win.blit(pygame.transform.scale(images[rooms[i]['name']], (images[rooms[i]['name']].get_width()*2, images[rooms[i]['name']].get_height()*2)), (x, HEIGHT // 2 - images[rooms[i]['name']].get_height()))
+        x += images[rooms[i]['name']].get_width()*2 - 16
+        if i + 1 < len(rooms):
+            win.blit(pygame.transform.scale(images["Tunnel"], (85*2, images["Tunnel"].get_height()*2)), (x, HEIGHT // 2 - images[rooms[i]['name']].get_height()))
+            x += 85*2 - 16
+    if page == "game":
+        win.blit(pygame.transform.smoothscale(images["ui"], (WIDTH, HEIGHT)), (0, 0))
     pygame.display.update()
 
 def menu(page):
@@ -122,12 +151,31 @@ def main(page):
     run_everything = True
     run = True
     # water = requests.get("http://127.0.0.1:5000/api/Materials/0",params={"materialName":"water"}).json()
-    resources = requests.get("http://127.0.0.1:5000/api/Materials/0").json()
-    print(type(resources))
-    print(resources)
+    # print(requests.get("http://127.0.0.1:5000/api/Materials/0"))
+    print(id)
+    resources = requests.get("http://127.0.0.1:5000/api/Materials/"+str(id)).json()['data']['materials']
+    rooms = requests.get("http://127.0.0.1:5000/api/Shelters/"+str(id)).json()['data']['rooms']
+    
+    room = requests.get("http://127.0.0.1:5000/api/Rooms/Habitat").json()["data"]
+    requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
+    room = requests.get("http://127.0.0.1:5000/api/Rooms/RoverDispatch").json()["data"]
+    requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
+    room = requests.get("http://127.0.0.1:5000/api/Rooms/Greenhouse").json()["data"]
+    requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
+    room = requests.get("http://127.0.0.1:5000/api/Rooms/CloudTreatment").json()["data"]
+    requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
+    room = requests.get("http://127.0.0.1:5000/api/Rooms/Hospital").json()["data"]
+    requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
+    room = requests.get("http://127.0.0.1:5000/api/Rooms/Potato").json()["data"]
+    requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
+    room = requests.get("http://127.0.0.1:5000/api/Rooms/Tree").json()["data"]
+    requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
+    # print(room)
+    rooms = requests.get("http://127.0.0.1:5000/api/Shelters/"+str(id)).json()['data']['rooms']
+    print(rooms)
+    
     while run:
-        clock.tick(30)
-        refresh(win, images, buttons, page)
+        refresh(win, images, buttons, page, rooms)
         for event in pygame.event.get():
             pos = pygame.mouse.get_pos()
 
@@ -136,6 +184,7 @@ def main(page):
                 run_everything = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 pass
+        clock.tick(30)
     return run_everything, page
 
 if __name__ == '__main__':
