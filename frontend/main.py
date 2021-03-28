@@ -185,6 +185,7 @@ def main(page):
                         if (roomClicked["collectable"]):
                             test = False
                             print(requests.put("http://127.0.0.1:5000/api/ShelterRooms/{id}/{roomName}".format(id=id,roomName=roomClicked["name"]),params={"value":False}))
+                            rooms = requests.get("http://127.0.0.1:5000/api/Shelters/"+str(id)).json()['data']['rooms']
                             print("http://127.0.0.1:5000/api/ShelterRooms/{id}/{roomName}".format(id=id,roomName=roomClicked["name"]))
                             for resource in roomClicked["resources"]:
                                 requests.put("http://127.0.0.1:5000/api/Materials/{id}".format(id=id),params={"materialName":resource, "amount":20})
