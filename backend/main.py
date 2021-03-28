@@ -60,7 +60,7 @@ shelterRoomsPutParser.add_argument("value", type=inputs.boolean, help="Name of t
 
 userMaterialBase = {
     "_id":0,
-    "materials": { "water": 25, "food":50, "oxygen": 50, "happiness": 0, "population": 10, "vbucks":7000}
+    "materials": { "water": 25, "food":25, "oxygen": 25, "happiness": 0, "population": 10, "vbucks":800}
 }
 
 class Room:
