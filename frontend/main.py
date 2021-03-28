@@ -3,9 +3,10 @@ import requests
 import time
 import json
 from threading import Timer
+from random import randint
 
 WIDTH,HEIGHT = 1152,640
-
+root = "http://127.0.0.1:5000/api/"
 class button():
     def __init__(self, x, y, scale, image, name = "", price = 0):
         self.x = x
@@ -115,12 +116,13 @@ def refresh(win, images, buttons, page, rooms =[], x = 0, image_offset = 0, room
         room_card.draw(win)
 
     for i in range(0, len(rooms)):
-        win.blit(pygame.transform.scale(images[rooms[i]['name']], (images[rooms[i]['name']].get_width()*2, images[rooms[i]['name']].get_height()*2)), (x, HEIGHT // 2 - images[rooms[i]['name']].get_height()))
+        currentRoom = images[rooms[i]['name']]
+        win.blit(pygame.transform.scale(currentRoom, (currentRoom.get_width()*2, currentRoom.get_height()*2)), (x, HEIGHT // 2 - currentRoom.get_height()))
         
-        win.blit(pygame.transform.scale(images['blimp'], (images['blimp'].get_width()*2, images['blimp'].get_height()*2)), (x+images[rooms[i]['name']].get_width() - images['blimp'].get_width(), HEIGHT // 2 - images[rooms[i]['name']].get_height()-images['blimp'].get_width()*2+50))
-        x += images[rooms[i]['name']].get_width()*2 - image_offset
+        win.blit(pygame.transform.scale(images['blimp'], (images['blimp'].get_width()*2, images['blimp'].get_height()*2)), (x+currentRoom.get_width() - images['blimp'].get_width(), HEIGHT // 2 - currentRoom.get_height()-images['blimp'].get_width()*2+50))
+        x += currentRoom.get_width()*2 - image_offset
         if i + 1 < len(rooms):
-            win.blit(pygame.transform.scale(images["Tunnel"], (images["Tunnel"].get_width()*2, images["Tunnel"].get_height()*2)), (x, HEIGHT // 2 - images[rooms[i]['name']].get_height()))
+            win.blit(pygame.transform.scale(images["Tunnel"], (images["Tunnel"].get_width()*2, images["Tunnel"].get_height()*2)), (x, HEIGHT // 2 - currentRoom.get_height()))
             x += images["Tunnel"].get_width()*2 - image_offset
     if page == "game":
         win.blit(pygame.transform.smoothscale(images["ui"], (WIDTH, HEIGHT)), (0, 0))
@@ -156,10 +158,19 @@ def menu(page):
     return run_everything, page
 rooms = {}
 def habitatClicked(id,name):
-    requests.put("http://127.0.0.1:5000/api/ShelterRooms/{id}/{roomName}".format(id=id,roomName=name),params={"value":True})
+    requests.put(root + "ShelterRooms/{id}/{roomName}".format(id=id,roomName=name),params={"value":True})
     print("wow gg")
     rooms = requests.get("http://127.0.0.1:5000/api/Shelters/"+str(id)).json()['data']['rooms']
     print("after request")
+def useMaterials(one,two):
+    print("TAKING OUT")
+    population = requests.get(root + "Materials/{id}".format(id=id),params={"materialName":"population"}).json()["data"]
+    requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"water", "amount":population // 5 * -1})
+    requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"food", "amount":population // 5 * -1})
+    requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"oxygen", "amount":population // 5 * -1})
+    timer = Timer(8, useMaterials, (1,2))
+    timer.start()
+    
 def main(page):
     buttons["add_before"].show = True
     buttons["add_after"].show = True
@@ -169,11 +180,10 @@ def main(page):
     # water = requests.get("http://127.0.0.1:5000/api/Materials/0",params={"materialName":"water"}).json()
     # print(requests.get("http://127.0.0.1:5000/api/Materials/0"))
     # print(id)
-    resources = requests.get("http://127.0.0.1:5000/api/Materials/"+str(id)).json()['data']['materials']
-    room = requests.get("http://127.0.0.1:5000/api/Rooms/Greenhouse").json()["data"]
-    requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
-    
-    rooms = requests.get("http://127.0.0.1:5000/api/Shelters/"+str(id)).json()['data']['rooms']
+    resources = requests.get(root + "Materials/"+str(id)).json()['data']['materials']
+    room = requests.get(root + "Rooms/Greenhouse").json()["data"]
+    requests.put(root + "Shelters/"+str(id), params = {"room":json.dumps(room)})
+    rooms = requests.get(root + "Shelters/"+str(id)).json()['data']['rooms']
 
     add = False
     before = False
@@ -184,11 +194,14 @@ def main(page):
     image_offset = 16
     mouse_down = False
     room_buttons = [button(0, HEIGHT // 2 - images[rooms[0]['name']].get_height(), 2, "clear")]
+    timer = Timer(8, useMaterials, (1,2))
+    timer.start()
     while run:
         refresh(win, images, buttons, page, rooms, x, image_offset, room_cards, resources)
+        #print(resources)
+        resources = requests.get(root + "Materials/"+str(id)).json()['data']['materials']
         for event in pygame.event.get():
             pos = pygame.mouse.get_pos()
-            print(pos)
             if event.type == pygame.QUIT:
                 run=False
                 run_everything = False
@@ -197,24 +210,29 @@ def main(page):
                 room_index = -1
                 print("yes")
                 for i in range(0, len(room_buttons)):
-                    if room_buttons[i].isOver((pos[0]-(x), pos[1])):
-                        rooms = requests.get("http://127.0.0.1:5000/api/Shelters/"+str(id)).json()['data']['rooms']
+                    if room_buttons[i].isOver((pos[0]-x, pos[1])):
+                        rooms = requests.get(root + "Shelters/"+str(id)).json()['data']['rooms']
                         room_index = i
                         roomClicked = rooms[room_index]
-                        print("poop " + str(i))
                         if (roomClicked["collectable"]):
-                            test = False
-                            print(requests.put("http://127.0.0.1:5000/api/ShelterRooms/{id}/{roomName}".format(id=id,roomName=roomClicked["name"]),params={"value":False}))
-                            rooms = requests.get("http://127.0.0.1:5000/api/Shelters/"+str(id)).json()['data']['rooms']
-                            print("http://127.0.0.1:5000/api/ShelterRooms/{id}/{roomName}".format(id=id,roomName=roomClicked["name"]))
+                            print(requests.put(root + "ShelterRooms/{id}/{roomName}".format(id=id,roomName=roomClicked["name"]),params={"value":False}))
+                            rooms = requests.get(root + "Shelters/"+str(id)).json()['data']['rooms']
                             for resource in roomClicked["resources"]:
-                                requests.put("http://127.0.0.1:5000/api/Materials/{id}".format(id=id),params={"materialName":resource, "amount":3})
-                                print("made request to add {resource}".format(resource=resource))
+                                if(randint(0,100) < roomClicked["errorChance"]):
+                                    print("an acid rain storm has happened! The water you were extracting was harmful and hurt your village...")
+                                    requests.put(root + "Materials/{id}".format(id=id),params={"materialName":resource, "amount":roomClicked["amount"]*-5})
+                                    resources = requests.get(root + "Materials/"+str(id)).json()['data']['materials']
+                                else:
+                                    print("we're safe")
+                                    if(randint(0,100) < 30):
+                                        requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"population", "amount":randint(1,2)})
+                                    requests.put(root + "Materials/{id}".format(id=id),params={"materialName":resource, "amount":roomClicked["amount"]})
+                                    resources = requests.get(root + "Materials/"+str(id)).json()['data']['materials']
+                                    print("made request to add {resource}".format(resource=resource))
                             r = Timer(roomClicked["speed"], habitatClicked, (id,roomClicked["name"]))
                             r.start()
                         else:
                             print("The Room is not ready!")
-                        print(room_index)
                 if buttons["add_before"].isOver((pos[0]-(x), pos[1])):
                     add = True
                     before = True
@@ -229,12 +247,13 @@ def main(page):
                     after = True
                 for room_card in room_cards:
                     if room_card.isOver((pos)) and room_card.show and resources['vbucks'] >= room_card.price:
-                        requests.put("http://127.0.0.1:5000/api/Materials/"+str(id),params={"materialName":"vbucks", "amount":-1*room_card.price})
-                        resources = requests.get("http://127.0.0.1:5000/api/Materials/"+str(id)).json()['data']['materials']
-                        
-                        room = requests.get("http://127.0.0.1:5000/api/Rooms/"+room_card.name).json()["data"]
-                        requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
-                        rooms = requests.get("http://127.0.0.1:5000/api/Shelters/"+str(id)).json()['data']['rooms']
+                        if((len(list(filter(lambda room: room["name"] == room_card.name, rooms)))) > 0):
+                            break
+                        requests.put(root + "Materials/"+str(id),params={"materialName":"vbucks", "amount":-1*room_card.price})
+                        resources = requests.get(root + "Materials/"+str(id)).json()['data']['materials']
+                        room = requests.get(root + "Rooms/"+room_card.name).json()["data"]
+                        requests.put(root + "Shelters/"+str(id), params = {"room":json.dumps(room)})
+                        rooms = requests.get(root + "Shelters/"+str(id)).json()['data']['rooms']
                         room_buttons.append(button((images[rooms[i]['name']].get_width()*2 - image_offset+images["Tunnel"].get_width()*2 - image_offset)*len(rooms), HEIGHT // 2 - images[rooms[0]['name']].get_height(), 2, "clear"))
             if event.type == pygame.MOUSEBUTTONUP:
                 mouse_down = False
@@ -269,7 +288,7 @@ if __name__ == '__main__':
     shelter_name = ""
     while shelter_name == "":
         shelter_name = input("What is the name of your shelter? ")  
-    id_json = requests.get("http://127.0.0.1:5000/api/Login/{name}".format(name=shelter_name)).json()
+    id_json = requests.get(root + "Login/{name}".format(name=shelter_name)).json()
     # print(id_json)
     id = id_json["data"]["_id"]
     # print(id)
@@ -283,12 +302,12 @@ if __name__ == '__main__':
     font = font("images/large_font", [(255, 255, 255)])
     pygame.mixer.music.load('music/RatsOnVenus.mp3')
     pygame.mixer.music.play(-1)
-    room_cards = [button(60, 440, 0.75, "greenhouseRoomCard", "Greenhouse", 300),
-    button(60+160, 440, 0.75, "hospitalRoomCard", "Hospital", 200),
-    button(60+160*2, 440, 0.75, "potatoRoomCard", "Potato", 200),
-    button(60+160*3, 440, 0.75, "roverRoomCard", "RoverDispatch", 300),
-    button(60+160*4, 440, 0.75, "treeRoomCard", "Tree", 200),
-    button(60+160*5, 440, 0.75, "waterRoomCard", "CloudTreatment", 200)]
+    room_cards = [button(60, 440, 0.9, "greenhouseRoomCard", "Greenhouse", 300),
+    button(60+160, 440, 0.9, "hospitalRoomCard", "Hospital", 200),
+    button(60+160*2, 440, 0.9, "potatoRoomCard", "Potato", 200),
+    button(60+160*3, 440, 0.9, "roverRoomCard", "RoverDispatch", 300),
+    button(60+160*4, 440, 0.9, "treeRoomCard", "Tree", 200),
+    button(60+160*5, 440, 0.9, "waterRoomCard", "CloudTreatment", 200)]
     
     run_everything = True
     page = "menu"
