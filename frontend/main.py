@@ -10,10 +10,9 @@ class button():
         self.x = x
         self.y = y
         self.image = pygame.image.load('images/buttons/'+image+'.png').convert()
-        self.width = self.image.get_width()*scale
-        self.height = self.image.get_height()*scale
+        self.width = int(self.image.get_width()*scale)
+        self.height = int(self.image.get_height()*scale)
         self.show = False
-        
 
     def isOver(self, pos):
         if pos[0] > self.x and pos[0] < self.x + self.width and pos[1] > self.y and pos[1] < self.y + self.height:
@@ -78,33 +77,26 @@ def load_images():
     images["menu_bg"] = pygame.image.load('images/menu_bg.png').convert()
     images["ui"] = pygame.image.load('images/ui.png')
     
-    images["Greenhouse"] = pygame.image.load('images/rooms/Standard_Plant.png')#.convert()
-    # images["Greenhouse"].set_colorkey((255,0,254))
-    images["CloudTreatment"] = pygame.image.load('images/rooms/Sulfuric_Filter.png')#.convert()
-    # images["CloudTreatment"].set_colorkey((255,0,254))
-    images["Hospital"] = pygame.image.load('images/rooms/Hospital.png')#.convert()
-    # images["Hospital"].set_colorkey((255,0,254))
-    images["Potato"] = pygame.image.load('images/rooms/Spud.png')#.convert()
-    # images["Potato"].set_colorkey((255,0,254))
-    images["Tree"] = pygame.image.load('images/rooms/Tree.png')#.convert()
-    # images["Tree"].set_colorkey((255,0,254))
+    images["Greenhouse"] = pygame.image.load('images/rooms/Standard_Plant.png')
+    images["CloudTreatment"] = pygame.image.load('images/rooms/Sulfuric_Filter.png')
+    images["Hospital"] = pygame.image.load('images/rooms/Hospital.png')
+    images["Potato"] = pygame.image.load('images/rooms/Spud.png')
+    images["Tree"] = pygame.image.load('images/rooms/Tree.png')
     images["RoverDispatch"] = pygame.image.load('images/rooms/Rover.png')
-    # images["RoverDispatch"].set_colorkey((255,0,254))
-    images["Habitat"] = pygame.image.load('images/rooms/Habitat.png')#.convert()
-    # images["Habitat"].set_colorkey((255,0,254))
-    images["Tunnel"] = pygame.image.load('images/rooms/Tunnel.png')#.convert()
-    # images["Tunnel"].set_colorkey((255,0,254))
+    images["Habitat"] = pygame.image.load('images/rooms/Habitat.png')
+    images["Tunnel"] = pygame.image.load('images/rooms/Tunnel.png')
+    images["blimp"] = pygame.image.load('images/rooms/Blimp.png')
 
 
     return images
 
 def load_buttons():
     buttons = {}
-    buttons["play"] = button(10, 10, 6, "play")
-    buttons["options"] = button(10, 20+buttons["play"].height, 6, "options")
+    buttons["play"] = button(200, 400, 1.5, "Play")
+    # buttons["options"] = button(10, 20+buttons["play"].height, 6, "options")
     return buttons
 
-def refresh(win, images, buttons, page, rooms =[]):
+def refresh(win, images, buttons, page, rooms =[], x = 10, image_offset = 0):
     if page == "game":
         win.blit(pygame.transform.smoothscale(images["bg"], (WIDTH, HEIGHT)), (0, 0))
     else:
@@ -113,20 +105,21 @@ def refresh(win, images, buttons, page, rooms =[]):
     for button in buttons.values():
         button.draw(win)
 
-    x = 10
     for i in range(0, len(rooms)):
         win.blit(pygame.transform.scale(images[rooms[i]['name']], (images[rooms[i]['name']].get_width()*2, images[rooms[i]['name']].get_height()*2)), (x, HEIGHT // 2 - images[rooms[i]['name']].get_height()))
-        x += images[rooms[i]['name']].get_width()*2 - 16
+        
+        win.blit(pygame.transform.scale(images['blimp'], (images['blimp'].get_width()*2, images['blimp'].get_height()*2)), (x+images[rooms[i]['name']].get_width() - images['blimp'].get_width(), HEIGHT // 2 - images[rooms[i]['name']].get_height()-images['blimp'].get_width()*2+50))
+        x += images[rooms[i]['name']].get_width()*2 - image_offset
         if i + 1 < len(rooms):
-            win.blit(pygame.transform.scale(images["Tunnel"], (85*2, images["Tunnel"].get_height()*2)), (x, HEIGHT // 2 - images[rooms[i]['name']].get_height()))
-            x += 85*2 - 16
+            win.blit(pygame.transform.scale(images["Tunnel"], (images["Tunnel"].get_width()*2, images["Tunnel"].get_height()*2)), (x, HEIGHT // 2 - images[rooms[i]['name']].get_height()))
+            x += images["Tunnel"].get_width()*2 - image_offset
     if page == "game":
         win.blit(pygame.transform.smoothscale(images["ui"], (WIDTH, HEIGHT)), (0, 0))
     pygame.display.update()
 
 def menu(page):
     buttons["play"].show = True
-    buttons["options"].show = True
+    # buttons["options"].show = True
     
     run_everything = True
     run = True
@@ -135,7 +128,7 @@ def menu(page):
         refresh(win, images, buttons, page)
         for event in pygame.event.get():
             pos = pygame.mouse.get_pos()
-
+            print(pos)
             if event.type == pygame.QUIT:
                 run=False
                 run_everything = False
@@ -144,7 +137,7 @@ def menu(page):
                     run = False
                     page = "game"
     buttons["play"].show = False
-    buttons["options"].show = False
+    # buttons["options"].show = False
     return run_everything, page
 
 def main(page):
@@ -174,16 +167,35 @@ def main(page):
     rooms = requests.get("http://127.0.0.1:5000/api/Shelters/"+str(id)).json()['data']['rooms']
     print(rooms)
     
+    x = 10
+    image_offset = 16
+    mouse_down = False
     while run:
-        refresh(win, images, buttons, page, rooms)
+        refresh(win, images, buttons, page, rooms, x, image_offset)
         for event in pygame.event.get():
             pos = pygame.mouse.get_pos()
-
+            
             if event.type == pygame.QUIT:
                 run=False
                 run_everything = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                pass
+                mouse_down = True
+            if event.type == pygame.MOUSEBUTTONUP:
+                mouse_down = False
+            print(pos)
+        if pos[0] < 50:
+            x += 10
+            if mouse_down:
+                x += 10
+            if x > 10:
+                x = 10
+        elif pos[0] > WIDTH - 50:
+            x -= 10
+            if mouse_down:
+                x -= 10
+            if x < -20 - (len(rooms)*(224+154)-154 - WIDTH): #Width of images including offset 
+                x = -20 - (len(rooms)*(224+154)-154 - WIDTH)
+
         clock.tick(30)
     return run_everything, page
 
@@ -209,7 +221,5 @@ if __name__ == '__main__':
     while run_everything:
         if page == "menu":
             run_everything, page = menu(page)
-        elif page == "options":
-            run_everything, page = option(page)
         elif page == "game":
             run_everything, page = main(page)
