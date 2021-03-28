@@ -66,7 +66,7 @@ class Room:
         self.name = name # name of room 
         self.resouces = resources # the resouces that are linked with the room 
         self.speed = speed # the amount of seconds needed to switch collectable from false to true
-        self.errorChange = errorChance # decimal for the chance of something going wrong. 
+        self.errorChance = errorChance # decimal for the chance of something going wrong. 
         self.collectable = False # if the user can click on the room to harvest it
     def asDict(self):
         return {
@@ -74,7 +74,7 @@ class Room:
             "name": self.name,
             "resouces": self.resources,
             "speed": self.speed,
-            "errorChange": self.errorChange,
+            "errorChange": self.errorChance,
             "collectable": self.collectable
         }
 class Shelter:  
