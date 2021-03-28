@@ -141,9 +141,12 @@ def refresh(win, images, buttons, page, rooms =[], x = 0, image_offset = 0, room
         font.render(win, str(resources["vbucks"]), (1050, 125), (255, 255, 255), scale=2, spacing=2)
         font.render(win, str(resources["population"]), (1060, 565), (255, 255, 255), scale=2, spacing=2)
         resource_per_population = 5
-        pygame.draw.rect(win, (0, 255, 0), pygame.Rect(268, 53, int((431 - 268) * resources['water']/(resources['population']*resource_per_population)), 27))
-        pygame.draw.rect(win, (0, 255, 0), pygame.Rect(537, 53, int((431 - 268) * resources['food']/(resources['population']*resource_per_population)), 27))
-        pygame.draw.rect(win, (0, 255, 0), pygame.Rect(814, 53, int((431 - 268) * resources['oxygen']/(resources['population']*resource_per_population)), 27))
+        if resources["water"] > 0:
+            pygame.draw.rect(win, (0, 255, 0), pygame.Rect(268, 53, int((431 - 268) * resources['water']/(resources['population']*resource_per_population)), 27))
+        if resources["food"] > 0:
+            pygame.draw.rect(win, (0, 255, 0), pygame.Rect(537, 53, int((431 - 268) * resources['food']/(resources['population']*resource_per_population)), 27))
+        if resources["oxygen"] > 0:
+            pygame.draw.rect(win, (0, 255, 0), pygame.Rect(814, 53, int((431 - 268) * resources['oxygen']/(resources['population']*resource_per_population)), 27))
         (431, 82)
     pygame.display.update()
 
@@ -187,11 +190,11 @@ def useMaterials(one,two):
     resources = requests.get(root + "Materials/"+str(id)).json()['data']['materials']
 
     if(resources["water"] < 0 and randint(0,100) < 50):
-        requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"population", "amount":(population // population_per_resource * -1)+1})
+        requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"population", "amount":(population // population_per_resource * -1)-1})
     if(resources["food"] < 0 and randint(0,100) < 50):
-        requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"population", "amount":(population // population_per_resource * -1)+1})
+        requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"population", "amount":(population // population_per_resource * -1)-1})
     if(resources["oxygen"] < 0 and randint(0,100) < 50):
-        requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"population", "amount":(population // population_per_resource * -1)+1})
+        requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"population", "amount":(population // population_per_resource * -1)-1})
 
     timer = Timer(drain_timer, useMaterials, (1,2))
     timer.start()
@@ -227,6 +230,10 @@ def main(page):
         refresh(win, images, buttons, page, rooms, x, image_offset, room_cards, resources, room_buttons)
         #print(resources)
         resources = requests.get(root + "Materials/"+str(id)).json()['data']['materials']
+        if resources["population"] <= 0:
+            print("Game over! You lose!")
+            run=False
+            run_everything = False
         for event in pygame.event.get():
             pos = pygame.mouse.get_pos()
             if event.type == pygame.QUIT:
