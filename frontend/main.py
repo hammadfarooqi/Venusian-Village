@@ -24,44 +24,58 @@ class button():
         if self.show:
             win.blit(pygame.transform.scale(self.image, (self.width, self.height)), (self.x, self.y))
 
-def clip(surf,x,y,x_size,y_size):
+def clip(surf, x, y, width, height):
     handle_surf = surf.copy()
-    clipR = pygame.Rect(x,y,x_size,y_size)
-    handle_surf.set_clip(clipR)
+    clip_rect = pygame.Rect(x, y, width, height)
+    handle_surf.set_clip(clip_rect)
     image = surf.subsurface(handle_surf.get_clip())
     return image.copy()
 
-class Font():
-    def __init__(self, path):
-        self.spacing = 1
-        self.character_order = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','.','-',',',':','+','\'','!','?','0','1','2','3','4','5','6','7','8','9','(',')','/','_','=','\\','[',']','*','"','<','>',';']
-        font_img = pygame.image.load(path).convert()
+class font:
+    def __init__(self, path, colors):
+        self.text_color = (255, 0, 0)
+        self.background_color = (0, 0, 0)
+        self.character_order = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.-,:+\'!?0123456789()/_=\\[]*"<>;'
+        original_font_image = pygame.image.load(path + '.png').convert()
+        self.height = original_font_image.get_height()
         current_char_width = 0
-        self.characters = {}
-        character_count = 0
-        for x in range(font_img.get_width()):
-            c = font_img.get_at((x, 0))
-            if c[0] == 127:
-                char_img = clip(font_img, x - current_char_width, 0, current_char_width, font_img.get_height())
-                self.characters[self.character_order[character_count]] = char_img.copy()
-                character_count += 1
-                current_char_width = 0
-            else:
-                current_char_width += 1
-        self.space_width = self.characters['A'].get_width()
+        self.color_renders = {}
+        for color in colors:
+            self.color_renders[color] = {}
+            font_image = original_font_image.copy()
+            font_image_copy = pygame.Surface(font_image.get_size())
+            font_image.set_colorkey(self.text_color)
+            font_image_copy.fill(color)
+            font_image_copy.blit(font_image, (0, 0))
+            font_image_copy.set_colorkey(self.background_color)
+            character_count = 0
+            for x in range(font_image_copy.get_width()):
+                pixel_color = font_image_copy.get_at((x, 0))
+                if pixel_color[0] == 127:
+                    char_img = clip(font_image_copy, x - current_char_width, 0, current_char_width,
+                                    font_image_copy.get_height())
+                    self.color_renders[color][self.character_order[character_count]] = char_img.copy()
+                    character_count += 1
+                    current_char_width = 0
+                else:
+                    current_char_width += 1
 
-    def render(self, surf, text, loc):
+        self.space_width = self.color_renders[colors[0]]['A'].get_width()
+
+    def render(self, surf, text, loc, color, scale=1, spacing=1):
         x_offset = 0
         for char in text:
             if char != ' ':
-                surf.blit(self.characters[char], (loc[0] + x_offset, loc[1]))
-                x_offset += self.characters[char].get_width() + self.spacing
+                self.color_renders[color][char].set_colorkey(self.background_color)
+                surf.blit(pygame.transform.scale(self.color_renders[color][char], (self.color_renders[color][char].get_width()*scale, self.color_renders[color][char].get_height()*scale)), (loc[0] + x_offset, loc[1]))
+                x_offset += self.color_renders[color][char].get_width()*scale + spacing
             else:
-                x_offset += self.space_width + self.spacing
+                x_offset += self.space_width*scale + spacing
 
 def load_images():
     images = {}
     images["bg"] = pygame.image.load('images/bg.png').convert()
+    images["water"] = pygame.image.load('images/water_drop.png').convert()
     return images
 
 def load_buttons():
@@ -76,6 +90,7 @@ def refresh(win, images, buttons, page):
     else:
         win.fill((100, 100, 50))
 
+    font.render(win, "hello there", (200, 200), (255, 255, 255), 5, 5)
     for button in buttons.values():
         button.draw(win)
     pygame.display.update()
@@ -138,7 +153,7 @@ if __name__ == '__main__':
     clock = pygame.time.Clock()
     images = load_images()
     buttons = load_buttons()
-    font = Font("images/large_font.png")
+    font = font("images/large_font", [(255, 255, 255)])
     
     run_everything = True
     page = "menu"
