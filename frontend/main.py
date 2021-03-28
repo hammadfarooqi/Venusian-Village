@@ -99,7 +99,7 @@ def load_buttons():
     # buttons["options"] = button(10, 20+buttons["play"].height, 6, "options")
     return buttons
 
-def refresh(win, images, buttons, page, rooms =[], x = 0, image_offset = 0):
+def refresh(win, images, buttons, page, rooms =[], x = 0, image_offset = 0, room_cards = []):
     if page == "game":
         win.blit(pygame.transform.smoothscale(images["bg"], (WIDTH, HEIGHT)), (0, 0))
     else:
@@ -108,6 +108,9 @@ def refresh(win, images, buttons, page, rooms =[], x = 0, image_offset = 0):
     buttons["add_after"].x=(-94 - (len(rooms)*(224+154)-154 - WIDTH))*-1 + WIDTH - buttons["add_after"].width - 20
     for button in buttons.values():
         button.draw(win, x)
+    
+    for room_card in room_cards:
+        room_card.draw(win)
 
     for i in range(0, len(rooms)):
         win.blit(pygame.transform.scale(images[rooms[i]['name']], (images[rooms[i]['name']].get_width()*2, images[rooms[i]['name']].get_height()*2)), (x, HEIGHT // 2 - images[rooms[i]['name']].get_height()))
@@ -149,6 +152,7 @@ def habitatClicked(id,name):
 def main(page):
     buttons["add_before"].show = True
     buttons["add_after"].show = True
+
     run_everything = True
     run = True
     # water = requests.get("http://127.0.0.1:5000/api/Materials/0",params={"materialName":"water"}).json()
@@ -159,6 +163,10 @@ def main(page):
     requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
     
     rooms = requests.get("http://127.0.0.1:5000/api/Shelters/"+str(id)).json()['data']['rooms']
+
+    add = False
+    before = False
+    after = False
     
     x_standard = 74
     x = x_standard
@@ -166,21 +174,21 @@ def main(page):
     mouse_down = False
     room_buttons = [button(0, HEIGHT // 2 - images[rooms[0]['name']].get_height(), 2, "clear")]
     while run:
-        refresh(win, images, buttons, page, rooms, x, image_offset)
+        refresh(win, images, buttons, page, rooms, x, image_offset, room_cards)
         for event in pygame.event.get():
             pos = pygame.mouse.get_pos()
-            
+
             if event.type == pygame.QUIT:
                 run=False
                 run_everything = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_down = True
                 room_index = -1
+                print("yes")
                 for i in range(0, len(room_buttons)):
-                    if room_buttons[i].isOver(pos):
+                    if room_buttons[i].isOver((pos[0]-(x), pos[1])):
                         room_index = i
                         roomClicked = rooms[room_index]
-                        
                         print("poop " + str(i))
                         if (roomClicked["collectable"]):
                             test = False
@@ -194,6 +202,19 @@ def main(page):
                             r.start
                         else:
                             print("The Room is not ready!")
+                        print(room_index)
+                if buttons["add_before"].isOver((pos[0]-(x), pos[1])):
+                    add = True
+                    before = True
+                    after = False
+                elif buttons["add_after"].isOver((pos[0]-(x), pos[1])):
+                    add = True
+                    before = False
+                    after = True
+                else:
+                    add = False
+                    before = False
+                    after = True        
                 if buttons["add_before"].isOver(pos):
                     pass
                 if buttons["add_after"].isOver(pos):
@@ -201,6 +222,13 @@ def main(page):
             if event.type == pygame.MOUSEBUTTONUP:
                 mouse_down = False
             # print(pos)
+        if add:
+            for room_card in room_cards:
+                room_card.show = True
+        else:
+            for room_card in room_cards:
+                room_card.show = False
+        
         if pos[0] < 50:
             x += 10
             if mouse_down:
@@ -217,6 +245,8 @@ def main(page):
         clock.tick(30)
     buttons["add_before"].show = False
     buttons["add_after"].show = False
+    for room_card in room_cards:
+        room_card.show = False
     return run_everything, page
 
 if __name__ == '__main__':
@@ -235,6 +265,14 @@ if __name__ == '__main__':
     images = load_images()
     buttons = load_buttons()
     font = font("images/large_font", [(255, 255, 255)])
+    pygame.mixer.music.load('music/RatsOnVenus.mp3')
+    pygame.mixer.music.play(-1)
+    room_cards = [button(60, 440, 0.75, "greenhouseRoomCard"),
+    button(60+160, 440, 0.75, "hospitalRoomCard"),
+    button(60+160*2, 440, 0.75, "potatoRoomCard"),
+    button(60+160*3, 440, 0.75, "roverRoomCard"),
+    button(60+160*4, 440, 0.75, "treeRoomCard"),
+    button(60+160*5, 440, 0.75, "waterRoomCard")]
     
     run_everything = True
     page = "menu"
