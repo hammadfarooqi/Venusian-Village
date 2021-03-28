@@ -7,13 +7,15 @@ from threading import Timer
 WIDTH,HEIGHT = 1152,640
 
 class button():
-    def __init__(self, x, y, scale, image):
+    def __init__(self, x, y, scale, image, name = "", price = 0):
         self.x = x
         self.y = y
         self.image = pygame.image.load('images/buttons/'+image+'.png')
         self.width = int(self.image.get_width()*scale)
         self.height = int(self.image.get_height()*scale)
         self.show = False
+        self.name = name
+        self.price = price
 
     def isOver(self, pos):
         if pos[0] > self.x and pos[0] < self.x + self.width and pos[1] > self.y and pos[1] < self.y + self.height:
@@ -99,7 +101,7 @@ def load_buttons():
     # buttons["options"] = button(10, 20+buttons["play"].height, 6, "options")
     return buttons
 
-def refresh(win, images, buttons, page, rooms =[], x = 0, image_offset = 0, room_cards = []):
+def refresh(win, images, buttons, page, rooms =[], x = 0, image_offset = 0, room_cards = [], resources = {}):
     if page == "game":
         win.blit(pygame.transform.smoothscale(images["bg"], (WIDTH, HEIGHT)), (0, 0))
     else:
@@ -122,6 +124,12 @@ def refresh(win, images, buttons, page, rooms =[], x = 0, image_offset = 0, room
             x += images["Tunnel"].get_width()*2 - image_offset
     if page == "game":
         win.blit(pygame.transform.smoothscale(images["ui"], (WIDTH, HEIGHT)), (0, 0))
+        font.render(win, str(resources["vbucks"]), (1050, 125), (255, 255, 255), scale=2, spacing=2)
+        font.render(win, str(resources["population"]), (1060, 565), (255, 255, 255), scale=2, spacing=2)
+        pygame.draw.rect(win, (0, 255, 0), pygame.Rect(268, 53, int((431 - 268) * resources['water']/(resources['population']*5)), 27))
+        pygame.draw.rect(win, (0, 255, 0), pygame.Rect(537, 53, int((431 - 268) * resources['food']/(resources['population']*5)), 27))
+        pygame.draw.rect(win, (0, 255, 0), pygame.Rect(814, 53, int((431 - 268) * resources['oxygen']/(resources['population']*5)), 27))
+        (431, 82)
     pygame.display.update()
 
 def menu(page):
@@ -160,7 +168,7 @@ def main(page):
     run = True
     # water = requests.get("http://127.0.0.1:5000/api/Materials/0",params={"materialName":"water"}).json()
     # print(requests.get("http://127.0.0.1:5000/api/Materials/0"))
-    print(id)
+    # print(id)
     resources = requests.get("http://127.0.0.1:5000/api/Materials/"+str(id)).json()['data']['materials']
     room = requests.get("http://127.0.0.1:5000/api/Rooms/Greenhouse").json()["data"]
     requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
@@ -177,10 +185,10 @@ def main(page):
     mouse_down = False
     room_buttons = [button(0, HEIGHT // 2 - images[rooms[0]['name']].get_height(), 2, "clear")]
     while run:
-        refresh(win, images, buttons, page, rooms, x, image_offset, room_cards)
+        refresh(win, images, buttons, page, rooms, x, image_offset, room_cards, resources)
         for event in pygame.event.get():
             pos = pygame.mouse.get_pos()
-
+            print(pos)
             if event.type == pygame.QUIT:
                 run=False
                 run_everything = False
@@ -218,14 +226,18 @@ def main(page):
                 else:
                     add = False
                     before = False
-                    after = True        
-                if buttons["add_before"].isOver(pos):
-                    pass
-                if buttons["add_after"].isOver(pos):
-                    pass
+                    after = True
+                for room_card in room_cards:
+                    if room_card.isOver((pos)) and room_card.show and resources['vbucks'] >= room_card.price:
+                        requests.put("http://127.0.0.1:5000/api/Materials/"+str(id),params={"materialName":"vbucks", "amount":-1*room_card.price})
+                        resources = requests.get("http://127.0.0.1:5000/api/Materials/"+str(id)).json()['data']['materials']
+                        
+                        room = requests.get("http://127.0.0.1:5000/api/Rooms/"+room_card.name).json()["data"]
+                        requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
+                        rooms = requests.get("http://127.0.0.1:5000/api/Shelters/"+str(id)).json()['data']['rooms']
+                        room_buttons.append(button((images[rooms[i]['name']].get_width()*2 - image_offset+images["Tunnel"].get_width()*2 - image_offset)*len(rooms), HEIGHT // 2 - images[rooms[0]['name']].get_height(), 2, "clear"))
             if event.type == pygame.MOUSEBUTTONUP:
                 mouse_down = False
-            # print(pos)
         if add:
             for room_card in room_cards:
                 room_card.show = True
@@ -233,11 +245,11 @@ def main(page):
             for room_card in room_cards:
                 room_card.show = False
         
-        if pos[0] < 50:
+        if pos[0] < 70:
             x += 10
             if mouse_down:
                 x += 10
-        elif pos[0] > WIDTH - 50:
+        elif pos[0] > WIDTH - 70:
             x -= 10
             if mouse_down:
                 x -= 10
@@ -271,12 +283,12 @@ if __name__ == '__main__':
     font = font("images/large_font", [(255, 255, 255)])
     pygame.mixer.music.load('music/RatsOnVenus.mp3')
     pygame.mixer.music.play(-1)
-    room_cards = [button(60, 440, 0.75, "greenhouseRoomCard"),
-    button(60+160, 440, 0.75, "hospitalRoomCard"),
-    button(60+160*2, 440, 0.75, "potatoRoomCard"),
-    button(60+160*3, 440, 0.75, "roverRoomCard"),
-    button(60+160*4, 440, 0.75, "treeRoomCard"),
-    button(60+160*5, 440, 0.75, "waterRoomCard")]
+    room_cards = [button(60, 440, 0.75, "greenhouseRoomCard", "Greenhouse", 300),
+    button(60+160, 440, 0.75, "hospitalRoomCard", "Hospital", 200),
+    button(60+160*2, 440, 0.75, "potatoRoomCard", "Potato", 200),
+    button(60+160*3, 440, 0.75, "roverRoomCard", "RoverDispatch", 300),
+    button(60+160*4, 440, 0.75, "treeRoomCard", "Tree", 200),
+    button(60+160*5, 440, 0.75, "waterRoomCard", "CloudTreatment", 200)]
     
     run_everything = True
     page = "menu"
