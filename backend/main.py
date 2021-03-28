@@ -198,7 +198,7 @@ class ShelterRooms(Resource):
             indexOfRoom += 1
         print(args["value"])
         print("rooms."+str(indexOfRoom)+".collectable")
-        query = shelters.update_one({"_id":shelterid},{"$set":{"rooms."+str(indexOfRoom)+".collectable":args["value"]}})
+        query = shelters.update({"_id":shelterid},{"$set":{"rooms."+str(indexOfRoom)+".collectable":args["value"]}})
         queried_room = list(filter(lambda room: room["name"] == name, rooms))[0]
         print(queried_room)
         return {"message": "ok","status": "200 OK"}
