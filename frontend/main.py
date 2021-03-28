@@ -152,30 +152,19 @@ def main(page):
     # print(requests.get("http://127.0.0.1:5000/api/Materials/0"))
     print(id)
     resources = requests.get("http://127.0.0.1:5000/api/Materials/"+str(id)).json()['data']['materials']
-    rooms = requests.get("http://127.0.0.1:5000/api/Shelters/"+str(id)).json()['data']['rooms']
+    room = requests.get("http://127.0.0.1:5000/api/Rooms/Habitat").json()["data"]
+    requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
     
     room = requests.get("http://127.0.0.1:5000/api/Rooms/Habitat").json()["data"]
     requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
-    room = requests.get("http://127.0.0.1:5000/api/Rooms/RoverDispatch").json()["data"]
-    requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
-    room = requests.get("http://127.0.0.1:5000/api/Rooms/Greenhouse").json()["data"]
-    requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
-    room = requests.get("http://127.0.0.1:5000/api/Rooms/CloudTreatment").json()["data"]
-    requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
-    room = requests.get("http://127.0.0.1:5000/api/Rooms/Hospital").json()["data"]
-    requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
-    room = requests.get("http://127.0.0.1:5000/api/Rooms/Potato").json()["data"]
-    requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
-    room = requests.get("http://127.0.0.1:5000/api/Rooms/Tree").json()["data"]
-    requests.put("http://127.0.0.1:5000/api/Shelters/"+str(id), params = {"room":json.dumps(room)})
-    # print(room)
+    
     rooms = requests.get("http://127.0.0.1:5000/api/Shelters/"+str(id)).json()['data']['rooms']
-    print(rooms)
     
     x_standard = 74
     x = x_standard
     image_offset = 16
     mouse_down = False
+    room_buttons = [button(0, HEIGHT // 2 - images[rooms[i]['name']].get_height(), 2, "clear")]
     while run:
         refresh(win, images, buttons, page, rooms, x, image_offset)
         for event in pygame.event.get():
@@ -186,6 +175,14 @@ def main(page):
                 run_everything = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_down = True
+                room_index = -1
+                for i in range(0, len(room_buttons)):
+                    if room_buttons[i].isOver(pos):
+                        room_index = i
+                if buttons["add_before"].isOver(pos):
+                    pass
+                if buttons["add_after"].isOver(pos):
+                    pass
             if event.type == pygame.MOUSEBUTTONUP:
                 mouse_down = False
             # print(pos)
@@ -193,14 +190,14 @@ def main(page):
             x += 10
             if mouse_down:
                 x += 10
-            if x > x_standard:
-                x = x_standard
         elif pos[0] > WIDTH - 50:
             x -= 10
             if mouse_down:
                 x -= 10
-            if x < -x_standard-20 - (len(rooms)*(224+154)-154 - WIDTH): #Width of images including offset 
-                x = -x_standard-20 - (len(rooms)*(224+154)-154 - WIDTH)
+        if x < -x_standard-20 - (len(rooms)*(224+154)-154 - WIDTH): #Width of images including offset 
+            x = -x_standard-20 - (len(rooms)*(224+154)-154 - WIDTH)
+        if x > x_standard:
+            x = x_standard
 
         clock.tick(30)
     buttons["add_before"].show = False
