@@ -35,6 +35,8 @@ materialsPostParser.add_argument("materialName", type=str, help="Name of the mat
 shelterPutParser = reqparse.RequestParser()
 shelterPutParser.add_argument("room", type=str, help="Name of the material")
 
+shelterRoomsPutParser = reqparse.RequestParser()
+shelterRoomsPutParser.add_argument("value", type=bool, help="Name of the material")
 
 # Classes
 # collection.insert_one(testObject)
@@ -156,7 +158,11 @@ class Materials(Resource):
         resources.update_one({"_id":userid},{"$inc":{"materials.water":args["amount"]}})  
         return {"mesage":"Successful","status": "200 OK"}
 
-
+class Shop(Resource):
+    def get(self):
+        return
+    def post(self):
+        return
 class Shelters(Resource):
     def get(self,shelterid):
         query = shelters.find_one({"_id":shelterid})
@@ -170,6 +176,27 @@ class Shelters(Resource):
         print(room_data)
         shelters.update_one({"_id":shelterid},{"$push":{"rooms":room_data}})
         return {"message":"Yeah ok","status":"200 OK"}
+class ShelterRooms(Resource):
+    def get(self,shelterid,name):
+        query = shelters.find_one({"_id":shelterid})
+        rooms = query["rooms"]
+        print(rooms)
+        queried_room = list(filter(lambda room: room["name"] == name, rooms))[0]
+        return {"message" : "POGGERS", "status": "200 OK", "data":queried_room}
+    def put(self,shelterid,name):
+        args = shelterRoomsPutParser.parse_args()
+        query = shelters.find_one({"_id":shelterid})
+        rooms = query["rooms"]
+        indexOfRoom = 0
+        for room in rooms:
+            if(room["name"] == name):
+                break
+            indexOfRoom += 1
+        query = shelters.update_one({"_id":shelterid},{"$set":{"rooms."+str(indexOfRoom)+".collectable":args["value"]}})
+        queried_room = list(filter(lambda room: room["name"] == name, rooms))[0]
+        return {"message": "ok","status": "200 OK"}
+        
+
 class Clear(Resource):
     def get(self):
         return {}
@@ -177,13 +204,14 @@ class Clear(Resource):
         return {}
     def post(self):
         print(shelters)
-        shelters.delete_mamy({})
-        resources.delete_mamy({})
+        shelters.delete_many({})
+        resources.delete_many({})
         return {"message":"Yeah ok","status":"200 OK"}
 # Resources Endpoints
 api.add_resource(Materials,"/api/Materials/<int:userid>")
 api.add_resource(Shelters,"/api/Shelters/<int:shelterid>")
 api.add_resource(Rooms,"/api/Rooms/<string:name>")
+api.add_resource(ShelterRooms,"/api/ShelterRooms/<int:shelterid>/<string:name>")
 api.add_resource(Login,"/api/Login/<string:name>")
 api.add_resource(Clear,"/api/Clear")
 #api.add_resource(Shelters,"/api/Shelters/")    
