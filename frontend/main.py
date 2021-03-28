@@ -7,6 +7,8 @@ from random import randint
 
 WIDTH,HEIGHT = 1152,640
 root = "http://127.0.0.1:5000/api/"
+drain_timer = 15
+
 class button():
     def __init__(self, x, y, scale, image, name = "", price = 0):
         self.x = x
@@ -128,9 +130,10 @@ def refresh(win, images, buttons, page, rooms =[], x = 0, image_offset = 0, room
         win.blit(pygame.transform.smoothscale(images["ui"], (WIDTH, HEIGHT)), (0, 0))
         font.render(win, str(resources["vbucks"]), (1050, 125), (255, 255, 255), scale=2, spacing=2)
         font.render(win, str(resources["population"]), (1060, 565), (255, 255, 255), scale=2, spacing=2)
-        pygame.draw.rect(win, (0, 255, 0), pygame.Rect(268, 53, int((431 - 268) * resources['water']/(resources['population']*5)), 27))
-        pygame.draw.rect(win, (0, 255, 0), pygame.Rect(537, 53, int((431 - 268) * resources['food']/(resources['population']*5)), 27))
-        pygame.draw.rect(win, (0, 255, 0), pygame.Rect(814, 53, int((431 - 268) * resources['oxygen']/(resources['population']*5)), 27))
+        resource_per_population = 5
+        pygame.draw.rect(win, (0, 255, 0), pygame.Rect(268, 53, int((431 - 268) * resources['water']/(resources['population']*resource_per_population)), 27))
+        pygame.draw.rect(win, (0, 255, 0), pygame.Rect(537, 53, int((431 - 268) * resources['food']/(resources['population']*resource_per_population)), 27))
+        pygame.draw.rect(win, (0, 255, 0), pygame.Rect(814, 53, int((431 - 268) * resources['oxygen']/(resources['population']*resource_per_population)), 27))
         (431, 82)
     pygame.display.update()
 
@@ -164,11 +167,15 @@ def habitatClicked(id,name):
     print("after request")
 def useMaterials(one,two):
     print("TAKING OUT")
+    population_per_resource = 5
     population = requests.get(root + "Materials/{id}".format(id=id),params={"materialName":"population"}).json()["data"]
-    requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"water", "amount":population // 5 * -1})
-    requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"food", "amount":population // 5 * -1})
-    requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"oxygen", "amount":population // 5 * -1})
-    timer = Timer(8, useMaterials, (1,2))
+    requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"water", "amount":population // population_per_resource * -1})
+    requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"food", "amount":population // population_per_resource * -1})
+    requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"oxygen", "amount":population // population_per_resource * -1})
+
+    
+
+    timer = Timer(drain_timer, useMaterials, (1,2))
     timer.start()
     
 def main(page):
@@ -181,7 +188,7 @@ def main(page):
     # print(requests.get("http://127.0.0.1:5000/api/Materials/0"))
     # print(id)
     resources = requests.get(root + "Materials/"+str(id)).json()['data']['materials']
-    room = requests.get(root + "Rooms/Greenhouse").json()["data"]
+    room = requests.get(root + "Rooms/Habitat").json()["data"]
     requests.put(root + "Shelters/"+str(id), params = {"room":json.dumps(room)})
     rooms = requests.get(root + "Shelters/"+str(id)).json()['data']['rooms']
 
@@ -194,8 +201,9 @@ def main(page):
     image_offset = 16
     mouse_down = False
     room_buttons = [button(0, HEIGHT // 2 - images[rooms[0]['name']].get_height(), 2, "clear")]
-    timer = Timer(8, useMaterials, (1,2))
+    timer = Timer(drain_timer, useMaterials, (1,2))
     timer.start()
+    pos=(0,0)
     while run:
         refresh(win, images, buttons, page, rooms, x, image_offset, room_cards, resources)
         #print(resources)
@@ -212,7 +220,11 @@ def main(page):
                 for i in range(0, len(room_buttons)):
                     if room_buttons[i].isOver((pos[0]-x, pos[1])):
                         rooms = requests.get(root + "Shelters/"+str(id)).json()['data']['rooms']
-                        room_index = i
+                        room_index = i+1
+                        # temp fix
+                        if room_index == 1:
+                            room_index = 2
+
                         roomClicked = rooms[room_index]
                         if (roomClicked["collectable"]):
                             print(requests.put(root + "ShelterRooms/{id}/{roomName}".format(id=id,roomName=roomClicked["name"]),params={"value":False}))
@@ -220,11 +232,12 @@ def main(page):
                             for resource in roomClicked["resources"]:
                                 if(randint(0,100) < roomClicked["errorChance"]):
                                     print("an acid rain storm has happened! The water you were extracting was harmful and hurt your village...")
-                                    requests.put(root + "Materials/{id}".format(id=id),params={"materialName":resource, "amount":roomClicked["amount"]*-5})
+                                    requests.put(root + "Materials/{id}".format(id=id),params={"materialName":resource, "amount":roomClicked["amount"]*-3})
                                     resources = requests.get(root + "Materials/"+str(id)).json()['data']['materials']
                                 else:
                                     print("we're safe")
-                                    if(randint(0,100) < 30):
+                                    population_increase_chance = 10
+                                    if(randint(0,100) < population_increase_chance):
                                         requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"population", "amount":randint(1,2)})
                                     requests.put(root + "Materials/{id}".format(id=id),params={"materialName":resource, "amount":roomClicked["amount"]})
                                     resources = requests.get(root + "Materials/"+str(id)).json()['data']['materials']
@@ -254,6 +267,9 @@ def main(page):
                         room = requests.get(root + "Rooms/"+room_card.name).json()["data"]
                         requests.put(root + "Shelters/"+str(id), params = {"room":json.dumps(room)})
                         rooms = requests.get(root + "Shelters/"+str(id)).json()['data']['rooms']
+                        population_increase_chance = 80
+                        if(randint(0,100) < population_increase_chance):
+                            requests.put(root + "Materials/{id}".format(id=id),params={"materialName":"population", "amount":randint(1,3)})
                         room_buttons.append(button((images[rooms[i]['name']].get_width()*2 - image_offset+images["Tunnel"].get_width()*2 - image_offset)*len(rooms), HEIGHT // 2 - images[rooms[0]['name']].get_height(), 2, "clear"))
             if event.type == pygame.MOUSEBUTTONUP:
                 mouse_down = False
