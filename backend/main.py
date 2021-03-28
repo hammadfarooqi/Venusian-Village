@@ -165,8 +165,10 @@ class Shelters(Resource):
         return "nice"
     def put(self,shelterid):
         args = shelterPutParser.parse_args()
-        # room_data = json.loads(args["room"])
-        shelters.update_one({"_id":shelterid},{"$push":args["room"]})
+        room_data = json.loads(args["room"])
+        print("printing room!")
+        print(room_data)
+        shelters.update_one({"_id":shelterid},{"$push":{"rooms":room_data}})
         return {"message":"Yeah ok","status":"200 OK"}
 class Clear(Resource):
     def get(self):
