@@ -17,6 +17,7 @@ client = pymongo.MongoClient("mongodb+srv://suntex:{password}@venus.klg4w.mongod
 db = client["Venus"]
 shelters = db["Shelters"]
 resources = db["Resources"]
+rooms = db["Rooms"]
 
 
  # Paths 
@@ -113,6 +114,12 @@ class Login(Resource):
         return
     def put(self,name):
         return
+class Rooms(Resource):
+    def get(self,name):
+        data = rooms.find_one({"name":name})
+        if data is None:
+            return {"message":"Meh","status":"404 RESOURCE NOT FOUND"}
+        return {"message": "Yay", "status": "200 OK", "data":data}
 
 class Materials(Resource):
     def get(self,userid):
@@ -143,7 +150,6 @@ class Materials(Resource):
         return {"mesage":"Successful","status": "200 OK"}
 
 
-
 class Shelters(Resource):
     def get(self,shelterid):
         query = collection.find_one({"_id":userid})
@@ -159,10 +165,7 @@ class Shelters(Resource):
 # Resources Endpoints
 api.add_resource(Materials,"/api/Materials/<int:userid>")
 api.add_resource(Shelters,"/api/Shelters/<int:userid>")
-# api.add_resource(Materials,"/api/Materials/<int:userid>/<string:resourcename>")
-# api.add_resource(Materials,"/api/Materials/<int:userid>/<string:resourcename>/<int:num>")
-# Shelter end points 
-#api.add_resource(Shelters,"/api/Shelters/<int:shelterid>/<string:operation>")
+api.add_resource(Rooms,"/api/Rooms/<string:name>")
 api.add_resource(Login,"/api/Login/<string:name>")
 #api.add_resource(Shelters,"/api/Shelters/")    
 
